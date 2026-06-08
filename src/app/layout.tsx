@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tagid – NFC Learning Platform",
+  title: "תגיד – למידה אינטראקטיבית עם תגי NFC",
   description:
-    "NFC-based interactive learning platform for schools. Tap a tag, complete a mission.",
+    "לגעת. לגלות. להגיד. הופכים את בית הספר למרחב למידה אינטראקטיבי באמצעות תגי NFC.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -13,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen">{children}</body>
+    <html lang="he" dir="rtl">
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }

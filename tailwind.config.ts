@@ -9,10 +9,18 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#4f46e5",
-          dark: "#3730a3",
-          light: "#eef2ff",
+          DEFAULT: "#0ea5b7", // teal
+          dark: "#0b7e8c",
+          light: "#e6f6f8",
         },
+        accent: {
+          DEFAULT: "#f97316", // warm orange
+          light: "#fff1e6",
+        },
+        ink: "#0f172a",
+      },
+      borderRadius: {
+        "2xl": "1rem",
       },
     },
   },

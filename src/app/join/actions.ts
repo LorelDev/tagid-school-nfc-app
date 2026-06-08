@@ -2,30 +2,29 @@
 
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { setParticipantCookie } from "@/lib/participant";
+import { setParticipantCookie, getParticipantCookie } from "@/lib/participant";
 
 export async function joinSession(formData: FormData) {
-  const joinCode = String(formData.get("join_code") || "").trim().toUpperCase();
+  const code = String(formData.get("session_code") || "").trim().toUpperCase();
   const name = String(formData.get("display_name") || "").trim();
   const next = String(formData.get("next") || "");
 
-  if (!joinCode || !name) {
-    redirect(`/join?error=${encodeURIComponent("Enter a code and your name.")}`);
+  if (!code || !name) {
+    redirect(`/join?error=${encodeURIComponent("הזינו קוד ושם")}&next=${encodeURIComponent(next)}`);
   }
 
   const admin = createAdminClient();
-
   const { data: session } = await admin
     .from("sessions")
     .select("id, status")
-    .eq("join_code", joinCode)
+    .eq("session_code", code)
     .maybeSingle();
 
   if (!session) {
-    redirect(`/join?error=${encodeURIComponent("No session found for that code.")}`);
+    redirect(`/join?error=${encodeURIComponent("לא נמצאה פעילות לקוד הזה")}&next=${encodeURIComponent(next)}`);
   }
-  if (session.status !== "live") {
-    redirect(`/join?error=${encodeURIComponent("That session is not live right now.")}`);
+  if (session.status === "completed") {
+    redirect(`/join?error=${encodeURIComponent("הפעילות הסתיימה")}&next=${encodeURIComponent(next)}`);
   }
 
   const { data: participant, error } = await admin
@@ -33,17 +32,39 @@ export async function joinSession(formData: FormData) {
     .insert({ session_id: session.id, display_name: name })
     .select("id")
     .single();
-
   if (error) {
-    redirect(`/join?error=${encodeURIComponent(error.message)}`);
+    redirect(`/join?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`);
   }
+
+  await admin.from("events").insert({
+    session_id: session.id,
+    participant_id: participant.id,
+    event_type: "join",
+    event_payload: { name },
+  });
 
   setParticipantCookie({
     participantId: participant.id,
     sessionId: session.id,
+    sessionCode: code,
+    groupId: null,
     name,
   });
 
-  // If the student scanned a tag before joining, send them straight to it.
-  redirect(next || "/play");
+  redirect(`/student/session/${session.id}${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+}
+
+export async function chooseGroup(formData: FormData) {
+  const cookie = getParticipantCookie();
+  if (!cookie) redirect("/join");
+
+  const groupId = String(formData.get("group_id"));
+  const next = String(formData.get("next") || "");
+  const admin = createAdminClient();
+
+  await admin.from("participants").update({ group_id: groupId }).eq("id", cookie.participantId);
+
+  setParticipantCookie({ ...cookie, groupId });
+
+  redirect(next || `/student/session/${cookie.sessionId}`);
 }

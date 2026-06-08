@@ -1,13 +1,14 @@
 import { cookies } from "next/headers";
 
-// The student has no auth account; identity is held in a signed-less cookie
-// scoped to a single session. (Anti-cheat is out of scope for this classroom
-// tool — the teacher can see everyone live.)
+// The student has no auth account; identity is held in a cookie scoped to a
+// single session. Privacy by design: we store only a display name and ids.
 const COOKIE = "tagid_participant";
 
 export type ParticipantCookie = {
   participantId: string;
   sessionId: string;
+  sessionCode: string;
+  groupId: string | null;
   name: string;
 };
 
@@ -16,7 +17,7 @@ export function setParticipantCookie(data: ParticipantCookie) {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 8, // a school day
+    maxAge: 60 * 60 * 10, // a long school day
   });
 }
 
